@@ -60,7 +60,9 @@ install_wg_dashboard() {
 
     cd $SRC_DIR
     chmod +x wgd.sh
-    ./wgd.sh install
+
+    msg i "Running WGDashboard installer (auto-select default mirror)"
+    printf "1\n" | ./wgd.sh install
 
     configure_dashboard
     create_service
@@ -69,6 +71,7 @@ install_wg_dashboard() {
     msg s "Installation completed successfully."
     echo "Access: http://$(hostname -I | awk '{print $1}'):$PORT"
 }
+
 
 # ========= CONFIGURATION =========
 configure_dashboard() {
@@ -137,38 +140,32 @@ status_dashboard() {
 }
 
 # ========= MENU =========
-main_menu() {
-    echo ""
-    echo "===== Enterprise WGDashboard Manager ====="
-    echo "1) Install WGDashboard"
-    echo "2) Uninstall WGDashboard"
-    echo "3) Service Status"
-    echo "4) Exit"
-    echo ""
-
-    read -p "Select option: " option
-
-    case $option in
-        1)
+handle_arguments() {
+    case "$1" in
+        install)
             install_dependencies
             install_wg_dashboard
             ;;
-        2)
+        uninstall)
             uninstall_wg_dashboard
             ;;
-        3)
+        status)
             status_dashboard
             ;;
-        4)
-            exit 0
-            ;;
         *)
-            msg e "Invalid option."
+            echo ""
+            echo "Usage:"
+            echo "  $0 install"
+            echo "  $0 uninstall"
+            echo "  $0 status"
+            echo ""
+            exit 1
             ;;
     esac
 }
 
+
 # ========= EXECUTION =========
 require_root
 check_ubuntu
-main_menu
+handle_arguments $1
