@@ -48,7 +48,9 @@ check_ubuntu() {
 install_dependencies() {
     msg i "Installing required packages..."
     apt update
-    apt -y install git python3 python3-pip wireguard net-tools curl firewalld unzip
+    apt -y install git python3 python3-pip wireguard net-tools curl firewalld unzip needrestart
+    sed -i "s/^#\?\$nrconf{restart}.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+
 }
 
 # ========= INSTALL =========
