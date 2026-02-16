@@ -78,7 +78,7 @@ install_wg_dashboard() {
 # ========= CONFIGURATION =========
 configure_dashboard() {
     msg i "Configuring wg-dashboard.ini"
-
+    echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf > /dev/null && sudo sysctl -p
     cp $WG_BASE/templates/wg-dashboard.ini.template $SRC_DIR/wg-dashboard.ini
     # APP_IP=$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')
     sed -i "s/^app_ip.*/app_ip = $APP_IP/" "$SRC_DIR/wg-dashboard.ini"
