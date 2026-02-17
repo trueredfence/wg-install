@@ -153,6 +153,7 @@ EOF
 
 # ========= FIREWALL =========
 configure_firewall() {
+    echo "Firewall configuration"
     #msg i "Opening firewall port $PORT"
     #systemctl start firewalld || true
     #firewall-cmd --add-port=${PORT}/tcp --permanent || true
