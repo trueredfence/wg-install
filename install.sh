@@ -228,8 +228,3 @@ handle_arguments() {
             ;;
     esac
 }
-
-# ========= EXECUTION =========
-require_root
-check_ubuntu
-handle_arguments "$1"
