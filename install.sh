@@ -50,7 +50,7 @@ install_dependencies() {
     export NEEDRESTART_MODE=a
     
     apt update
-    apt -y install git python3 python3-pip wireguard net-tools curl
+    apt -y install git python3 python3-pip wireguard net-tools curl openresolv
     
     if [ ! -f /etc/needrestart/needrestart.conf ]; then
         apt -y install needrestart
