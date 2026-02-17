@@ -125,7 +125,7 @@ configure_dashboard() {
 create_service() {
     msg i "Creating systemd service"
 
-cat > $SERVICE_FILE <<EOF
+cat > "$SERVICE_FILE" <<EOF
 [Unit]
 After=syslog.target network-online.target
 Wants=wg-quick.target
