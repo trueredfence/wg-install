@@ -16,7 +16,6 @@ APP_IP="0.0.0.0"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ========= LOGGER =========
@@ -25,7 +24,6 @@ msg() {
         i) echo -e "${YELLOW}[INFO]${NC} $2" ;;
         s) echo -e "${GREEN}[SUCCESS]${NC} $2" ;;
         e) echo -e "${RED}[ERROR]${NC} $2" ;;
-        *) echo -e "${CYAN}$1${NC}" ;;
     esac
 }
 
@@ -47,18 +45,22 @@ check_ubuntu() {
 # ========= DEPENDENCIES =========
 install_dependencies() {
     msg i "Installing required packages..."
+    
+    export DEBIAN_FRONTEND=noninteractive
+    export NEEDRESTART_MODE=a
+    
     apt update
-    apt -y install git python3 python3-pip wireguard net-tools curl firewalld unzip needrestart
-    # Fix for needrestart to prevent interactive prompts
-    if [ -f /etc/needrestart/needrestart.conf ]; then
-        sed -i "s/^#\?\$nrconf{restart}.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+    apt -y install git python3 python3-pip wireguard net-tools curl
+    
+    if [ ! -f /etc/needrestart/needrestart.conf ]; then
+        apt -y install needrestart
     fi
+    
+    sed -i "s/^#\?\$nrconf{restart}.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
 }
 
 create_wg1_conf() {
     local WG_CONF="/etc/wireguard/wg1.conf"
-
-    # Detect default outbound interface
     DEFAULT_IFACE=$(ip route | awk '/default/ {print $5}' | head -n1)
 
     if [[ -z "$DEFAULT_IFACE" ]]; then
@@ -103,19 +105,15 @@ install_wg_dashboard() {
 
     rm -rf "$WG_BASE"
     git clone https://github.com/WGDashboard/WGDashboard.git "$WG_BASE"
-    
     configure_dashboard
-    create_wg1_conf
     
     cd "$SRC_DIR"
     chmod +x wgd.sh
     msg i "Running WGDashboard installer"
     printf "1\n" | ./wgd.sh install
-    
     ./wgd.sh start && ./wgd.sh stop  
-    
+    create_wg1_conf
     create_service
-    configure_firewall
 
     msg s "Installation completed successfully."
     echo "Access: http://$(hostname -I | awk '{print $1}'):$PORT"
@@ -152,12 +150,6 @@ EOF
     systemctl restart wgdashboard
 }
 
-# ========= FIREWALL =========
-configure_firewall() {
-    msg i "Firewall configuration skipped (commented in script)"
-    # Add rules here if needed
-}
-
 # ========= UNINSTALL =========
 uninstall_wg_dashboard() {
     msg e "Uninstalling WGDashboard"
@@ -169,62 +161,20 @@ uninstall_wg_dashboard() {
     msg s "WGDashboard removed successfully."
 }
 
-# ========= STATUS =========
-status_dashboard() {
-    systemctl status wgdashboard
-}
-# ========= MENU =========
-handle_arguments() {
-    # If $1 is empty but $0 is a valid command, shift the value to $1
-    if [[ -z "$1" ]]; then
-        case "$0" in
-            install|uninstall|status) set -- "$0" ;;
-        esac
-    fi
-
-    case "$1" in
-        install)
-            install_dependencies
-            install_wg_dashboard
-            ;;
-        uninstall)
-            uninstall_wg_dashboard
-            ;;
-        status)
-            status_dashboard
-            ;;
-        *)
-            echo ""
-            echo "Usage:"
-            echo "  sudo bash -c \"\$(curl ...)\" _ {install|uninstall|status}"
-            echo "  OR simple pipe: curl ... | sudo bash -s -- install"
-            echo ""
-            exit 1
-            ;;
-    esac
-}
-
 # ========= EXECUTION =========
 require_root
 check_ubuntu
-# Pass both $1 and $0 to the handler to ensure we catch the argument
-handle_arguments "$1"
-# ========= MENU =========
-handle_arguments() {
-    case "$1" in
-        install)
-            install_dependencies
-            install_wg_dashboard
-            ;;
-        uninstall)
-            uninstall_wg_dashboard
-            ;;
-        status)
-            status_dashboard
-            ;;
-        *)
-            echo "Usage: $0 {install|uninstall|status}"
-            exit 1
-            ;;
-    esac
-}
+
+case "${1:-install}" in
+    install)
+        install_dependencies
+        install_wg_dashboard
+        ;;
+    uninstall)
+        uninstall_wg_dashboard
+        ;;
+    *)
+        echo "Usage: $0 {install|uninstall}"
+        exit 1
+        ;;
+esac
