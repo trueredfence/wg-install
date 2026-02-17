@@ -53,20 +53,56 @@ install_dependencies() {
 
 }
 
+create_wg1_conf() {
+    local WG_CONF="/etc/wireguard/wg1.conf"
+
+    # Ensure root
+    if [[ $EUID -ne 0 ]]; then
+        echo "Run as root."
+        return 1
+    fi
+
+    # Detect default outbound interface
+    DEFAULT_IFACE=$(ip route | awk '/default/ {print $5}' | head -n1)
+
+    if [[ -z "$DEFAULT_IFACE" ]]; then
+        echo "Could not detect default network interface."
+        return 1
+    fi
+
+    mkdir -p /etc/wireguard
+
+    cat > "$WG_CONF" <<EOF
+[Interface]
+Address = 10.0.0.1/24
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ${DEFAULT_IFACE} -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ${DEFAULT_IFACE} -j MASQUERADE
+ListenPort = 443
+PrivateKey = gPAQ1rA0e/0QFWZM96rtxDqR39BWcovjocKNGItRgHQ=
+EOF
+
+    chmod 600 "$WG_CONF"
+
+    echo "wg1.conf created with interface: $DEFAULT_IFACE"
+}
+
+
+
 # ========= INSTALL =========
 install_wg_dashboard() {
     msg i "Installing WGDashboard to $WG_BASE"
 
     rm -rf $WG_BASE
     git clone https://github.com/WGDashboard/WGDashboard.git $WG_BASE
-
+    configure_dashboard    
+    create_wg1_conf
     cd $SRC_DIR
     chmod +x wgd.sh
-
     msg i "Running WGDashboard installer (auto-select default mirror)"
     printf "1\n" | ./wgd.sh install
-
-    configure_dashboard
+    ./wgd.sh start && \
+    ./wgd.sh stop  
+    
     create_service
     configure_firewall
 
@@ -117,10 +153,10 @@ EOF
 
 # ========= FIREWALL =========
 configure_firewall() {
-    msg i "Opening firewall port $PORT"
-    systemctl start firewalld || true
-    firewall-cmd --add-port=${PORT}/tcp --permanent || true
-    firewall-cmd --reload || true
+    #msg i "Opening firewall port $PORT"
+    #systemctl start firewalld || true
+    #firewall-cmd --add-port=${PORT}/tcp --permanent || true
+    #firewall-cmd --reload || true
 }
 
 # ========= UNINSTALL =========
