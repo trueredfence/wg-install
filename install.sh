@@ -72,11 +72,13 @@ create_wg1_conf() {
 
     cat > "$WG_CONF" <<EOF
 [Interface]
-Address = 10.0.0.1/24
+PrivateKey = WLEumShzhPHblOpjC+YuLIJ+f4eH6ZSrijujeLQSgkg=
+Address = 172.16.0.1/32
+MTU = 1420
+DNS = 8.8.8.8
 PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ${DEFAULT_IFACE} -j MASQUERADE
 PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ${DEFAULT_IFACE} -j MASQUERADE
-ListenPort = 443
-PrivateKey = gPAQ1rA0e/0QFWZM96rtxDqR39BWcovjocKNGItRgHQ=
+ListenPort = 51820
 EOF
 
     chmod 600 "$WG_CONF"
