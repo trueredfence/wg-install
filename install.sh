@@ -173,9 +173,15 @@ uninstall_wg_dashboard() {
 status_dashboard() {
     systemctl status wgdashboard
 }
-
 # ========= MENU =========
 handle_arguments() {
+    # If $1 is empty but $0 is a valid command, shift the value to $1
+    if [[ -z "$1" ]]; then
+        case "$0" in
+            install|uninstall|status) set -- "$0" ;;
+        esac
+    fi
+
     case "$1" in
         install)
             install_dependencies
@@ -188,7 +194,11 @@ handle_arguments() {
             status_dashboard
             ;;
         *)
-            echo "Usage: $0 {install|uninstall|status}"
+            echo ""
+            echo "Usage:"
+            echo "  sudo bash -c \"\$(curl ...)\" _ {install|uninstall|status}"
+            echo "  OR simple pipe: curl ... | sudo bash -s -- install"
+            echo ""
             exit 1
             ;;
     esac
@@ -197,4 +207,29 @@ handle_arguments() {
 # ========= EXECUTION =========
 require_root
 check_ubuntu
+# Pass both $1 and $0 to the handler to ensure we catch the argument
 handle_arguments "$1"
+# # ========= MENU =========
+# handle_arguments() {
+#     case "$1" in
+#         install)
+#             install_dependencies
+#             install_wg_dashboard
+#             ;;
+#         uninstall)
+#             uninstall_wg_dashboard
+#             ;;
+#         status)
+#             status_dashboard
+#             ;;
+#         *)
+#             echo "Usage: $0 {install|uninstall|status}"
+#             exit 1
+#             ;;
+#     esac
+# }
+
+# # ========= EXECUTION =========
+# require_root
+# check_ubuntu
+# handle_arguments "$1"
